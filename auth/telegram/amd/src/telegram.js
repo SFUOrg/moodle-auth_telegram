@@ -31,10 +31,12 @@ import $ from 'jquery';
  */
 const validateParameters = (botusername, wwwroot) => {
     if (!botusername || botusername.trim() === '') {
+        console.error('Telegram bot username is required');
         return false;
     }
 
     if (!wwwroot || wwwroot.trim() === '') {
+        console.error('Moodle wwwroot is required');
         return false;
     }
 
@@ -50,7 +52,7 @@ const validateParameters = (botusername, wwwroot) => {
 const createTelegramWidgetScript = (botusername, wwwroot) => {
     const script = $("<script>").attr({
         "async": true,
-        "src": "https://telegram.org/js/telegram-widget.js?21",// Updated to latest version
+        "src": "https://telegram.org/js/telegram-widget.js?22", // Updated to latest version
         "data-telegram-login": botusername,
         "data-size": "large",
         "data-radius": "5",
