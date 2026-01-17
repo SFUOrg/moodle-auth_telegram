@@ -51,20 +51,34 @@ try {
 function check_tel_authorization($userinfo): array {
     $checkhash = $userinfo['hash'];
     unset($userinfo['hash']);
-    $datacheckarr = [];
+    
+    // Sort the array by key in ascending order
+    ksort($userinfo);
+    
+    // Generate the data-check-string
+    $datacheckstring = '';
     foreach ($userinfo as $key => $value) {
-        $datacheckarr[] = $key . '=' . $value;
+        $datacheckstring .= $key . '=' . $value . "\n";
     }
-    sort($datacheckarr);
-    $datacheckstring = implode("\n", $datacheckarr);
+    // Remove the trailing newline
+    $datacheckstring = rtrim($datacheckstring, "\n");
+    
+    // Generate secret key using SHA256 of bot token
     $secretkey = hash('sha256', BOT_TOKEN, true);
+    
+    // Calculate the HMAC-SHA256 hash
     $hash = hash_hmac('sha256', $datacheckstring, $secretkey);
-    if (strcmp($hash, $checkhash) !== 0) {
+    
+    // Verify the hash using timing attack safe comparison
+    if (!hash_equals($hash, $checkhash)) {
         throw new Exception('Data is NOT from Telegram');
     }
+    
+    // Check if the data is older than 1 day (86400 seconds)
     if ((time() - $userinfo['auth_date']) > 86400) {
         throw new Exception('Data is outdated');
     }
+    
     return $userinfo;
 }
 
