@@ -17,22 +17,24 @@
 {{!
     @template auth_telegram/script
 
-    TODO describe template script
+    Template for displaying Telegram login widget
 
     Example context (json):
     {
+        "botusername": "mybot",
+        "authurl": "https://example.com/auth/telegram/index.php"
     }
 }}
 
 <div class="signupform">
-    <h1 class="login-heading">Continue with Telegram Account</h1>
+    <h1 class="login-heading">{{#str}} pluginname, auth_telegram {{/str}}</h1>
     <div class="centered-menu">
         <script async 
             src="https://telegram.org/js/telegram-widget.js?22" 
             data-telegram-login="{{botusername}}" 
             data-size="large" 
             data-userpic="true" 
-            data-auth-url="{{authurl}}">
+            data-auth-url="{{{authurl}}}">
         </script>
 </div>
 </div>

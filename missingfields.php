@@ -19,6 +19,15 @@ require_once($CFG->dirroot . '/user/profile/lib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 require_once($CFG->libdir . '/formslib.php');
 
+/**
+ * Handle missing fields after Telegram authentication
+ * @package    auth_telegram
+ * @copyright  2023 Mortada ELgaily <mortada.elgaily@gmail.com>
+ * @copyright  2024 Wail Abualela <wailabualela@email.com>
+ * @copyright  2025 Your Name <your.email@example.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 $PAGE->set_url(new moodle_url('/auth/telegram/missingfields.php'));
 $PAGE->set_context(context_system::instance());
 
@@ -84,11 +93,30 @@ class auth_telegram_missing_fields_form extends moodleform {
 
         $this->add_action_buttons(false, get_string('continue'));
     }
+    
+    /**
+     * Custom validation for email uniqueness
+     */
+    public function validation($data, $files) {
+        global $DB;
+        $errors = parent::validation($data, $files);
+        
+        // Check if email is already taken by another user
+        if (!empty($data['email'])) {
+            $existinguser = $DB->get_record('user', ['email' => $data['email'], 'deleted' => 0]);
+            if ($existinguser && $existinguser->id != $this->_customdata['user']->id) {
+                $errors['email'] = get_string('emailexists');
+            }
+        }
+        
+        return $errors;
+    }
 }
 
 $form = new auth_telegram_missing_fields_form(null, [
     'missing' => $missing,
     'profilefields' => $profilefields,
+    'user' => $user,
 ]);
 
 if ($data = $form->get_data()) {

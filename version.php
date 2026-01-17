@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->version   = 2025112700;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2018120304;        // Requires this Moodle version.
+$plugin->requires  = 2022041900;        // Requires this Moodle version (4.0).
 $plugin->component = 'auth_telegram';        // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release   = '1.0.3';

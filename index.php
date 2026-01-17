@@ -23,6 +23,7 @@ require_once($CFG->dirroot . '/user/lib.php');
  * @package    auth_telegram
  * @copyright  2023 Mortada ELgaily <mortada.elgaily@gmail.com>
  * @copyright  2024 Wail Abualela <wailabualela@email.com>
+ * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -74,10 +75,23 @@ function check_tel_authorization($userinfo): array {
  * @return void
  */
 function user_authentication($userinfo) {
-    $user = \auth_telegram\telegram::user_exists($userinfo['username'])
-        ? \auth_telegram\telegram::get_user($userinfo['username'])
-        : \auth_telegram\telegram::create_user($userinfo);
+    $autocreate = get_config('auth_telegram', 'autocreate');
+    
+    // Check if user exists by telegram ID
+    $userexists = \auth_telegram\telegram::user_exists($userinfo['id']);
+    
+    if ($userexists) {
+        // User exists, retrieve the user
+        $user = \auth_telegram\telegram::get_user($userinfo['id']);
+    } else if ($autocreate) {
+        // Auto-create is enabled, create new user
+        $user = \auth_telegram\telegram::create_user($userinfo);
+    } else {
+        // User doesn't exist and auto-create is disabled
+        throw new moodle_exception('usernotfound', 'auth_telegram', '', $userinfo['id']);
+    }
 
+    // Check for missing required fields
     $missing = auth_telegram_get_missing_fields($user);
     if (!empty($missing)) {
         $_SESSION['auth_telegram_pending_user'] = $user;
@@ -85,7 +99,7 @@ function user_authentication($userinfo) {
         redirect(new moodle_url('/auth/telegram/missingfields.php'));
     }
 
-    \auth_telegram\telegram::user_login($user);
+    \auth_telegram\telegram::user_login($user, optional_param('wantsurl', '/', PARAM_LOCALURL));
 
     // Mark the session as logged in via Telegram without overwriting existing data.
     $_SESSION['logged-in'] = true;

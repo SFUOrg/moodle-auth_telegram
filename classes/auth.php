@@ -47,11 +47,11 @@ class auth extends \auth_plugin_base
      * @return void
      */
     public function loginpage_hook(): void {
-        global $PAGE;
+        global $PAGE, $CFG;
 
-        $PAGE->requires->js_call_amd('auth_telegram/telegram_login', 'init', [
+        $PAGE->requires->js_call_amd('auth_telegram/telegram', 'init', [
             get_config('auth_telegram', 'bot_username') ?: get_config('auth_telegram', 'botusername'),
-            get_config('auth_telegram', 'auth_url') ?: 'https://nl.moddaker.com'
+            $CFG->wwwroot
         ]);
 
     }
@@ -65,7 +65,7 @@ class auth extends \auth_plugin_base
         }
 
         // Check if the user exists in the database.
-        if ($user = $DB->get_record('user', ['username' => $username], '*', MUST_EXIST)) {
+        if ($user = $DB->get_record('user', ['username' => $username], '*', IGNORE_MISSING)) {
             // Set the user as logged in.
             complete_user_login($user);
             return true;
@@ -82,7 +82,6 @@ class auth extends \auth_plugin_base
      */
     public function loginpage_idp_list($wantsurl) {
 
-
         $result = [];
         if (empty($wantsurl)) {
             $wantsurl = '/';
@@ -90,8 +89,37 @@ class auth extends \auth_plugin_base
         $params   = ['wantsurl' => $wantsurl, 'sesskey' => sesskey()];
         $url      = new moodle_url('/auth/telegram/test.php', $params);
         $icon     = new moodle_url('/auth/telegram/pix/telegram_icon.png');
-        $result[] = ['url' => $url, 'iconurl' => $icon, 'name' => 'telegram'];
+        $result[] = ['url' => $url, 'iconurl' => $icon, 'name' => get_string('pluginname', 'auth_telegram')];
 
         return $result;
+    }
+    
+    /**
+     * Returns true if this authentication plugin can change the user's
+     * password.
+     *
+     * @return bool
+     */
+    public function can_change_password() {
+        return false;
+    }
+
+    /**
+     * Returns the URL for changing the user's password or null if the default
+     * change password page should be used.
+     *
+     * @return moodle_url|null
+     */
+    public function change_password_url() {
+        return null;
+    }
+
+    /**
+     * Returns true if plugin allows resetting of internal password.
+     *
+     * @return bool
+     */
+    public function is_internal() {
+        return false;
     }
 }
