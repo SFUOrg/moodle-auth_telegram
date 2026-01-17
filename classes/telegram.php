@@ -23,12 +23,15 @@ require_once($CFG->dirroot.'/user/lib.php');
 require_once($CFG->dirroot.'/user/profile/lib.php');
 
 use stdClass;
+use coding_exception;
+use dml_exception;
 
 /**
  * Class telegram
  *
  * @package    auth_telegram
  * @copyright  2024 Wail Abualela <wailabualela@email.com>
+ * @copyright  2025 Your Name <your.email@example.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class telegram
@@ -43,9 +46,9 @@ class telegram
 
         $user                    = new stdClass();
         $user->auth              = "telegram";
-        $user->username          = $data['username'];
-        $user->firstname         = $data['first_name'];
-        $user->lastname          = $data['last_name'];
+        $user->username          = $data['id']; // Use telegram ID as username
+        $user->firstname         = $data['first_name'] ?? 'Unknown';
+        $user->lastname          = $data['last_name'] ?? '';
         $user->confirmed         = 1;
         $user->mnethostid        = 1;
         $user->firstaccess       = time();
@@ -54,9 +57,9 @@ class telegram
         $user->lastaccess        = time();
         $user->currentlogin      = time();
         $user->lastip            = getremoteaddr();
-        $user->password          = '';
-        $user->email             = '';
-        $user->phone1            = '';
+        $user->password          = ''; // No password for telegram auth
+        $user->email             = $data['email'] ?? $data['id'] . '@telegram.local';
+        $user->phone1            = $data['phone_number'] ?? '';
         $user->calendartype      = $CFG->calendartype;
         $user->firstnamephonetic = '';
         $user->lastnamephonetic  = '';
@@ -65,14 +68,19 @@ class telegram
         $user->lang              = $CFG->lang;
         $user->timezone          = $CFG->timezone;
 
+        try {
+            $user->id = user_create_user($user, false, false);
 
-        $user->id = user_create_user($user, false, false);
+            profile_save_data($user);
 
-        profile_save_data($user);
+            if (!empty($data['photo_url'])) {
+                self::update_picture($user, $data['photo_url']);
+            }
 
-        self::update_picture($user, $data['photo_url']);
-
-        return $user;
+            return $user;
+        } catch (Exception $e) {
+            throw new \moodle_exception('usercreationfailed', 'auth_telegram', '', null, $e->getMessage());
+        }
     }
 
     /**
@@ -102,7 +110,7 @@ class telegram
      */
     public static function get_user($telegramid): stdClass {
         global $DB;
-        return $DB->get_record(
+        $user = $DB->get_record(
             'user',
             array(
                 'username'  => $telegramid,
@@ -110,6 +118,12 @@ class telegram
                 'confirmed' => true,
             ),
         );
+        
+        if (!$user) {
+            throw new \moodle_exception('usernotfound', 'auth_telegram', '', $telegramid);
+        }
+        
+        return $user;
     }
 
     /**
